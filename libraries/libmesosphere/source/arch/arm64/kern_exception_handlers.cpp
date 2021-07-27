@@ -109,6 +109,15 @@ namespace ams::kern::arch::arm64 {
                     break;
             }
 
+            /* If we should, clear the thread's state as single-step. */
+            #if defined(MESOSPHERE_ENABLE_HARDWARE_SINGLE_STEP)
+            if (AMS_UNLIKELY(GetCurrentThread().IsSingleStep())) {
+                GetCurrentThread().ClearSingleStep();
+                cpu::MonitorDebugSystemControlRegisterAccessor().SetSoftwareStep(false).Store();
+                cpu::EnsureInstructionConsistency();
+            }
+            #endif
+
             /* If we should process the user exception (and it's not a breakpoint), try to enter. */
             const bool is_software_break = (ec == EsrEc_Unknown || ec == EsrEc_IllegalExecution || ec == EsrEc_BkptInstruction || ec == EsrEc_BrkInstruction);
             const bool is_breakpoint     = (ec == EsrEc_BreakPointEl0 || ec == EsrEc_SoftwareStepEl0 || ec == EsrEc_WatchPointEl0);
@@ -293,6 +302,12 @@ namespace ams::kern::arch::arm64 {
                 /* Print that an exception occurred. */
                 MESOSPHERE_RELEASE_LOG("Exception occurred. %016lx\n", GetCurrentProcess().GetProgramId());
 
+                /* If the exception was single-step and we have no debug object, we should just return. */
+                #if defined(MESOSPHERE_ENABLE_HARDWARE_SINGLE_STEP)
+                if (ec == EsrEc_SoftwareStepEl0 && AMS_UNLIKELY(!cur_process.IsAttachedToDebugger())) {
+                    return;
+                }
+                #endif
 
                 /* If the SVC is handled, handle it. */
                 if (!svc::ResultNotHandled::Includes(result)) {
@@ -552,6 +567,7 @@ namespace ams::kern::arch::arm64 {
                 KDpcManager::HandleDpc();
             }
         }
+
         /* Note that we're no longer in an exception handler. */
         GetCurrentThread().ClearInExceptionHandler();
     }
