@@ -2,13 +2,13 @@
 #include "ldr_pcv_patch.hpp"
 
 #define EMC_OVERCLOCK 1
-#define EMC_OVERVOLT 0
+#define EMC_OVERVOLT 1
 
 namespace ams::ldr {
 
     namespace {
 
-        constexpr u32 NewEmcFreq = 1862400;
+        constexpr u32 NewEmcFreq = 2131200;
 
         namespace Erista {
             /* EMC */
