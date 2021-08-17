@@ -115,12 +115,14 @@ namespace ams::ldr {
 
         Result ValidateAcidSignature(Meta *meta) {
             /* Loader did not check signatures prior to 10.0.0. */
+            
             if (hos::GetVersion() < hos::Version_10_0_0) {
                 meta->check_verification_data = false;
                 return ResultSuccess();
             }
 
-            /* Verify the signature. */
+            /* Verify the signature.*/
+            
             const u8 *sig         = meta->acid->signature;
             const size_t sig_size = sizeof(meta->acid->signature);
             const u8 *mod         = GetAcidSignatureModulus(meta->npdm->signature_key_generation);
@@ -134,6 +136,7 @@ namespace ams::ldr {
 
             meta->check_verification_data = is_signature_valid;
             return ResultSuccess();
+
         }
 
         Result LoadMetaFromFile(fs::FileHandle file, MetaCache *cache) {
